@@ -1,0 +1,15 @@
+name: gatekeeper
+version: 0.2.0
+description: Project-centric Docker workspace runtime for Hermes.
+author: local
+provides_tools:
+  - docker_terminal
+  - docker_read_file
+  - docker_write_file
+  - docker_patch
+  - docker_search_files
+  - docker_list_files
+  - docker_runtime_status
+provides_hooks:
+  - pre_llm_call
+  - pre_tool_call
