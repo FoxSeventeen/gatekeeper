@@ -7,6 +7,7 @@ import subprocess
 from .config import CONTAINER_WORKSPACE, DEFAULT_SETTINGS, DockerRuntimeSettings
 from .path_mapper import PathMapper
 from .runtime_resolver import DockerRuntime
+from .terminal_ops import docker_terminal
 
 
 def _python_exec(

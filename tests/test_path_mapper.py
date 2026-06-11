@@ -22,3 +22,9 @@ def test_path_mapper_protects_project_config(tmp_path: Path):
     mapper = PathMapper(tmp_path)
     with pytest.raises(ProtectedPathError):
         mapper.assert_writable("/workspace/.hermes/docker-runtime.json")
+
+
+def test_path_mapper_protects_all_hermes_metadata(tmp_path: Path):
+    mapper = PathMapper(tmp_path)
+    with pytest.raises(ProtectedPathError):
+        mapper.assert_writable("/workspace/.hermes/other.json")

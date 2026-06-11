@@ -7,7 +7,7 @@ Completed:
 - Added unit tests for config, state store, policy, path mapper, hooks, and workspace command initialization.
 - Added `docs/test-report.md`.
 - Ran Python compile check successfully using a repo-local pycache prefix.
-- Ran `pytest gatekeeper/tests` successfully after adding test import-path setup.
+- Ran `pytest tests` successfully after adding test import-path setup and flattening the plugin layout.
 
 Remaining:
 

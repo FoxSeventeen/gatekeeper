@@ -33,22 +33,29 @@ def resolve_runtime(
     store = store or StateStore(settings.state_db_path)
     containers = containers or ContainerManager(settings)
     project_id = store.get_project_id_for_session(session_id)
+    if not project_id and session_id != "default":
+        project_id = store.get_project_id_for_session("default")
     if not project_id:
         raise WorkspaceNotSet("Workspace is not set. Ask the user to run /workspace set <absolute_host_path>.")
     binding = store.get_project_binding(project_id)
     if not binding:
         raise WorkspaceNotSet("Workspace binding is missing from state.db. Ask the user to run /workspace repair.")
-    return runtime_from_binding(binding, containers)
+    return runtime_from_binding(binding, containers, session_id=session_id)
 
 
-def runtime_from_binding(binding: ProjectBinding, containers: ContainerManager) -> DockerRuntime:
+def runtime_from_binding(
+    binding: ProjectBinding,
+    containers: ContainerManager,
+    *,
+    session_id: str = "",
+) -> DockerRuntime:
     host_workspace = Path(binding.host_workspace)
     config = read_project_config(host_workspace)
     if config is None:
         raise WorkspaceNotSet("Project config is missing. Ask the user to run /workspace set <absolute_host_path>.")
     containers.ensure_container_for_binding(binding, config)
     return DockerRuntime(
-        session_id="",
+        session_id=session_id,
         project_id=binding.project_id,
         container_name=binding.container_name,
         host_workspace=host_workspace,

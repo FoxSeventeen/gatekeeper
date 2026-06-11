@@ -4,9 +4,9 @@ Environment:
 
 - Local path: `/Users/foxseventeen/code/gatekeeper`
 - Docker CLI: unavailable locally (`docker: command not found`)
-- Python compile check: passed with `PYTHONPYCACHEPREFIX=/Users/foxseventeen/code/gatekeeper/.pycache python3 -m compileall gatekeeper`
+- Python compile check: passed with `PYTHONPYCACHEPREFIX=.pycache python3 -m compileall .`
 - Import smoke check: passed for `project_config` and `PathMapper`
-- Pytest: `pytest gatekeeper/tests` passed, 10 tests in 0.05s
+- Pytest: `pytest tests` passed, 21 tests in 0.05s after the root layout change
 - Manual smoke test: passed for project config round trip, protected path rejection, state.db alias, and mocked `/workspace set`
 
 Implemented tests:
@@ -27,8 +27,8 @@ Not run as real Docker integration:
 Recommended CI:
 
 ```bash
-pytest gatekeeper/tests
-docker build -t hermes-docker-runtime:latest gatekeeper
+pytest tests
+docker build -t hermes-docker-runtime:latest .
 ```
 
 Then run the plan's minimum success demo on a host with Docker installed.

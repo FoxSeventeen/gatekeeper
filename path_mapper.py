@@ -41,9 +41,9 @@ class PathMapper:
 
     def assert_writable(self, raw_path: str | Path) -> None:
         container_path = PurePosixPath(self.to_container(raw_path))
-        protected = self.container_workspace / ".hermes" / "docker-runtime.json"
-        if container_path == protected:
-            raise ProtectedPathError("file tools may not modify /workspace/.hermes/docker-runtime.json")
+        protected_dir = self.container_workspace / ".hermes"
+        if container_path == protected_dir or protected_dir in container_path.parents:
+            raise ProtectedPathError("file tools may not modify /workspace/.hermes metadata")
 
     def to_logical(self, raw_path: str | Path) -> str:
         return self.to_container(raw_path)

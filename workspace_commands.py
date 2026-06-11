@@ -93,6 +93,7 @@ class WorkspaceCommandHandler:
             created_config = True
 
         binding = self.store.get_project_binding(config.project_id)
+        imported_config = config is not None and not created_config and binding is None
         if binding:
             if binding.container_name != config.container_name:
                 return "BROKEN: project config and state.db container_name differ. Run /workspace recreate."
@@ -103,6 +104,8 @@ class WorkspaceCommandHandler:
         if info is None:
             self.containers.create_container(config, host_workspace)
             action = "created Docker container"
+            if imported_config:
+                action = "recreated missing Docker container from imported project config"
         else:
             validation = self.containers.validate_container_for_project(info, config, host_workspace)
             if not validation.ok:
@@ -110,12 +113,19 @@ class WorkspaceCommandHandler:
             if not validation.running:
                 self.containers.start_container(config.container_name)
             action = "reused existing Docker container"
+            if imported_config:
+                action = "adopted existing Docker container from imported project config"
 
         self.store.upsert_project_binding(_binding_from_config(config, host_workspace))
         self.store.upsert_session_alias(session_id, root_session_id, config.project_id)
         self.store.update_last_used_at(config.project_id)
 
-        origin = "initialized new project config" if created_config else "loaded project config"
+        if created_config:
+            origin = "initialized new project config"
+        elif imported_config:
+            origin = "imported project config"
+        else:
+            origin = "loaded known project config"
         return (
             f"LOCKED: workspace bound to Docker runtime\n"
             f"- {origin}\n"
