@@ -97,7 +97,7 @@ class WorkspaceCommandHandler:
         if binding:
             if binding.container_name != config.container_name:
                 return "BROKEN: project config and state.db container_name differ. Run /workspace recreate."
-            if Path(binding.host_workspace).resolve() != host_workspace:
+            if binding.host_workspace != str(host_workspace):
                 return "BROKEN: state.db host workspace differs from current path. Run /workspace recreate."
 
         info = self.containers.inspect_container(config.container_name)

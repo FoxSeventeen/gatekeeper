@@ -40,6 +40,8 @@ Gatekeeper 是一个 Hermes 插件，用来把每个项目工作区绑定到一�
 
 项目会被挂载到容器内的 `/workspace`。普通文件工具不能写入 `/workspace/.hermes`，这样可以避免插件元数据被工作区文件操作误改。
 
+`/workspace set` 会把用户传入的路径视为 Docker daemon 所在宿主机上的路径，并通过一次只读 bind mount probe 验证 Docker 是否能看到该目录。因此，如果 Hermes agent 自身运行在容器中，需要确保它能访问 Docker CLI 和 Docker socket。
+
 ## 开发
 
 在当前目录运行单元测试：

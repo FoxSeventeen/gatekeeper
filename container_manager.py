@@ -90,8 +90,8 @@ class ContainerManager:
                 f"hermes.container_workspace={CONTAINER_WORKSPACE}",
                 "--label",
                 f"hermes.image={config.image}",
-                "-v",
-                f"{host_workspace}:{CONTAINER_WORKSPACE}",
+                "--mount",
+                f"type=bind,source={host_workspace},target={CONTAINER_WORKSPACE}",
                 "-w",
                 CONTAINER_WORKSPACE,
                 "--network",
@@ -120,10 +120,10 @@ class ContainerManager:
         if labels.get("hermes.container_workspace") != CONTAINER_WORKSPACE:
             return ContainerValidation(False, False, "container workspace label does not match")
 
-        expected_source = str(host_workspace.resolve())
+        expected_source = str(host_workspace)
         for mount in container_info.get("Mounts", []):
-            if mount.get("Destination") == CONTAINER_WORKSPACE:
-                source = str(Path(mount.get("Source", "")).resolve())
+            if mount.get("Type") == "bind" and mount.get("Destination") == CONTAINER_WORKSPACE:
+                source = str(mount.get("Source", ""))
                 if source != expected_source:
                     return ContainerValidation(
                         False,

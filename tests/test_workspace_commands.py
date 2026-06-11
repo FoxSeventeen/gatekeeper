@@ -35,6 +35,7 @@ def test_workspace_set_initializes_project(tmp_path: Path):
     settings = DockerRuntimeSettings(
         state_db_path=tmp_path / "state.db",
         deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
     )
     handler = WorkspaceCommandHandler(store, containers, settings)
 
@@ -54,6 +55,7 @@ def test_workspace_set_without_session_context_creates_default_alias(tmp_path: P
     settings = DockerRuntimeSettings(
         state_db_path=tmp_path / "state.db",
         deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
     )
     handler = WorkspaceCommandHandler(store, containers, settings)
 
@@ -68,14 +70,18 @@ def test_workspace_set_imports_config_and_recreates_missing_container(tmp_path: 
     write_project_config(tmp_path, config)
     store = StateStore(tmp_path / "state.db")
     containers = FakeContainers()
-    settings = DockerRuntimeSettings(state_db_path=tmp_path / "state.db", deny_roots=(Path("/etc"),))
+    settings = DockerRuntimeSettings(
+        state_db_path=tmp_path / "state.db",
+        deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
+    )
     handler = WorkspaceCommandHandler(store, containers, settings)
 
     result = handler.handle(f"set {tmp_path}", session_id="s1")
 
     assert "imported project config" in result
     assert "recreated missing Docker container" in result
-    assert containers.created == [(config.container_name, str(tmp_path.resolve()))]
+    assert containers.created == [(config.container_name, str(tmp_path))]
     assert store.get_project_binding(config.project_id)
 
 
@@ -85,7 +91,11 @@ def test_workspace_set_adopts_existing_matching_container(tmp_path: Path):
     validation = ContainerValidation(True, False, "container labels and mounts match")
     store = StateStore(tmp_path / "state.db")
     containers = FakeContainers(inspected={"State": {"Running": False}}, validation=validation)
-    settings = DockerRuntimeSettings(state_db_path=tmp_path / "state.db", deny_roots=(Path("/etc"),))
+    settings = DockerRuntimeSettings(
+        state_db_path=tmp_path / "state.db",
+        deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
+    )
     handler = WorkspaceCommandHandler(store, containers, settings)
 
     result = handler.handle(f"set {tmp_path}", session_id="s1")
@@ -102,7 +112,11 @@ def test_workspace_set_rejects_label_mismatch_for_foreign_config(tmp_path: Path)
     validation = ContainerValidation(False, False, "container project_id label does not match")
     store = StateStore(tmp_path / "state.db")
     containers = FakeContainers(inspected={"State": {"Running": False}}, validation=validation)
-    settings = DockerRuntimeSettings(state_db_path=tmp_path / "state.db", deny_roots=(Path("/etc"),))
+    settings = DockerRuntimeSettings(
+        state_db_path=tmp_path / "state.db",
+        deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
+    )
     handler = WorkspaceCommandHandler(store, containers, settings)
 
     result = handler.handle(f"set {tmp_path}", session_id="s1")
@@ -118,7 +132,11 @@ def test_workspace_set_rejects_mount_mismatch_for_foreign_config(tmp_path: Path)
     validation = ContainerValidation(False, True, "container mount source does not match current workspace")
     store = StateStore(tmp_path / "state.db")
     containers = FakeContainers(inspected={"State": {"Running": True}}, validation=validation)
-    settings = DockerRuntimeSettings(state_db_path=tmp_path / "state.db", deny_roots=(Path("/etc"),))
+    settings = DockerRuntimeSettings(
+        state_db_path=tmp_path / "state.db",
+        deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
+    )
     handler = WorkspaceCommandHandler(store, containers, settings)
 
     result = handler.handle(f"set {tmp_path}", session_id="s1")
