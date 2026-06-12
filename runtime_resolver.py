@@ -44,14 +44,21 @@ def resolve_runtime(
     containers = containers or ContainerManager(settings)
     project_id = store.get_project_id_for_session(session_id)
     logger.info("Gatekeeper runtime 查询 session alias：session_id=%s project_id=%s", session_id, project_id)
-    if not project_id and allow_auto_bind and candidate_paths:
+    host_candidate_paths = _host_candidate_paths(candidate_paths or [])
+    if candidate_paths and len(host_candidate_paths) != len(candidate_paths):
+        logger.info(
+            "Gatekeeper runtime 已过滤非宿主路径候选：original=%s filtered=%s",
+            list(candidate_paths),
+            host_candidate_paths,
+        )
+    if not project_id and allow_auto_bind and host_candidate_paths:
         logger.info(
             "Gatekeeper runtime 当前 session 未绑定，优先尝试根据工具参数中的宿主路径自动绑定：session_id=%s candidate_paths=%s",
             session_id,
-            list(candidate_paths),
+            host_candidate_paths,
         )
         runtime = resolve_runtime_from_candidate_paths(
-            candidate_paths,
+            host_candidate_paths,
             store=store,
             containers=containers,
             settings=settings,
@@ -72,6 +79,16 @@ def resolve_runtime(
         logger.info("Gatekeeper runtime 解析失败：state.db 缺少 project binding project_id=%s", project_id)
         raise WorkspaceNotSet("Workspace binding is missing from state.db. Ask the user to run /workspace repair.")
     return runtime_from_binding(binding, containers, session_id=session_id)
+
+
+def _host_candidate_paths(candidate_paths: Sequence[str]) -> list[str]:
+    paths: list[str] = []
+    for raw_path in candidate_paths:
+        path = str(raw_path)
+        if path == CONTAINER_WORKSPACE or path.startswith(CONTAINER_WORKSPACE + "/"):
+            continue
+        paths.append(path)
+    return paths
 
 
 def resolve_runtime_from_candidate_paths(

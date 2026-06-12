@@ -89,6 +89,22 @@ def test_resolve_runtime_falls_back_to_default_alias(tmp_path: Path):
     assert runtime.project_id == project_id
 
 
+def test_resolve_runtime_uses_default_alias_when_only_tool_call_id_is_present(tmp_path: Path):
+    store = StateStore(tmp_path / "state.db")
+    project_id = _insert_binding(store, tmp_path)
+    store.upsert_session_alias("default", None, project_id)
+
+    runtime = resolve_runtime(
+        store=store,
+        containers=HealthyContainers(),
+        settings=DockerRuntimeSettings(state_db_path=tmp_path / "state.db"),
+        tool_call_id="call-1",
+    )
+
+    assert runtime.session_id == "default"
+    assert runtime.project_id == project_id
+
+
 def test_resolve_runtime_prefers_host_path_over_default_alias(tmp_path: Path):
     store = StateStore(tmp_path / "state.db")
     default_project = _insert_binding(store, tmp_path / "default")
@@ -115,6 +131,37 @@ def test_resolve_runtime_prefers_host_path_over_default_alias(tmp_path: Path):
 
     assert runtime.project_id != default_project
     assert runtime.host_workspace == project.resolve()
+
+
+def test_resolve_runtime_does_not_auto_bind_container_workspace_path(monkeypatch, tmp_path: Path):
+    store = StateStore(tmp_path / "state.db")
+    default_project = _insert_binding(store, tmp_path / "default")
+    store.upsert_session_alias("default", None, default_project)
+    validated_paths = []
+
+    def fake_existing_anchor(path):
+        if str(path).startswith("/workspace"):
+            return Path("/workspace")
+        return path
+
+    def fake_validate_host_workspace(path, settings):
+        validated_paths.append(str(path))
+        return Path(path)
+
+    monkeypatch.setattr("gatekeeper.runtime_resolver._existing_anchor", fake_existing_anchor)
+    monkeypatch.setattr("gatekeeper.runtime_resolver.validate_host_workspace", fake_validate_host_workspace)
+
+    runtime = resolve_runtime(
+        store=store,
+        containers=HealthyContainers(),
+        settings=DockerRuntimeSettings(state_db_path=tmp_path / "state.db"),
+        session_id="tool-call-session",
+        candidate_paths=["/workspace/main.cpp"],
+        allow_auto_bind=True,
+    )
+
+    assert runtime.project_id == default_project
+    assert validated_paths == []
 
 
 def test_resolve_runtime_does_not_fallback_when_session_has_binding(tmp_path: Path):

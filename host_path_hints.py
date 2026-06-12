@@ -7,6 +7,8 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
+from .config import CONTAINER_WORKSPACE
+
 
 HOST_PATH_RE = re.compile(r"(?<![\w.-])/(?:[^\s'\"`;|&<>$(){}\\]|\\.)+")
 
@@ -22,14 +24,18 @@ def _collect_host_path_hints(value: Any, hints: list[str]) -> None:
         return
     if isinstance(value, Path):
         text = str(value)
-        if text.startswith("/"):
+        if _is_host_path_hint(text):
             hints.append(text)
         return
     if isinstance(value, str):
         text = value.strip()
-        if text.startswith("/"):
+        if _is_host_path_hint(text):
             hints.append(text)
-        hints.extend(match.group(0).replace("\\ ", " ") for match in HOST_PATH_RE.finditer(value))
+        hints.extend(
+            path
+            for path in (match.group(0).replace("\\ ", " ") for match in HOST_PATH_RE.finditer(value))
+            if _is_host_path_hint(path)
+        )
         return
     if isinstance(value, Mapping):
         for nested in value.values():
@@ -38,6 +44,10 @@ def _collect_host_path_hints(value: Any, hints: list[str]) -> None:
     if isinstance(value, Iterable) and not isinstance(value, (bytes, bytearray)):
         for nested in value:
             _collect_host_path_hints(nested, hints)
+
+
+def _is_host_path_hint(path: str) -> bool:
+    return path.startswith("/") and path != CONTAINER_WORKSPACE and not path.startswith(CONTAINER_WORKSPACE + "/")
 
 
 def _dedupe(paths: list[str]) -> list[str]:

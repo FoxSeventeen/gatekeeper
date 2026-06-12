@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 def session_id_from_context(context: dict) -> str:
-    for key in ("session_id", "task_id", "tool_call_id"):
+    for key in ("session_id", "root_session_id", "parent_session_id", "task_id"):
         value = context.get(key)
         if isinstance(value, str) and value:
             return value
