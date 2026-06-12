@@ -9,7 +9,7 @@ from pathlib import Path
 
 PLUGIN_NAME = "docker-runtime"
 CREATED_BY = "hermes-docker-runtime-plugin"
-DEFAULT_IMAGE = "hub-dev.hexin.cn:9544/security-baseimages/baseimage-cpp:fst-build"
+DEFAULT_IMAGE = "hub-dev.hexin.cn:9544/security-baseimages/baseimage_cpp:fst-build"
 DEFAULT_PROBE_IMAGE = "gatekeeper-runtime:latest"
 CONTAINER_WORKSPACE = "/workspace"
 PROJECT_CONFIG_RELATIVE = Path(".hermes") / "docker-runtime.json"

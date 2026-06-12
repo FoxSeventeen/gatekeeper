@@ -18,6 +18,21 @@ class HealthyContainers:
         self.ensure_calls.append((binding, config))
 
 
+class AutoBindContainers:
+    def __init__(self):
+        self.created = []
+        self.ensure_calls = []
+
+    def inspect_container(self, container_name):
+        return None
+
+    def create_container(self, config, host_workspace):
+        self.created.append((config.container_name, str(host_workspace)))
+
+    def ensure_container_for_binding(self, binding, config):
+        self.ensure_calls.append((binding, config))
+
+
 def _insert_binding(store: StateStore, workspace: Path) -> str:
     config = create_project_config(workspace)
     write_project_config(workspace, config)
@@ -74,6 +89,34 @@ def test_resolve_runtime_falls_back_to_default_alias(tmp_path: Path):
     assert runtime.project_id == project_id
 
 
+def test_resolve_runtime_prefers_host_path_over_default_alias(tmp_path: Path):
+    store = StateStore(tmp_path / "state.db")
+    default_project = _insert_binding(store, tmp_path / "default")
+    store.upsert_session_alias("default", None, default_project)
+    project = tmp_path / "explicit"
+    source = project / "main.cpp"
+    source.parent.mkdir(parents=True)
+    source.write_text("int main() { return 0; }\n", encoding="utf-8")
+    containers = AutoBindContainers()
+    settings = DockerRuntimeSettings(
+        state_db_path=tmp_path / "state.db",
+        deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
+    )
+
+    runtime = resolve_runtime(
+        store=store,
+        containers=containers,
+        settings=settings,
+        session_id="real-session",
+        candidate_paths=[str(source)],
+        allow_auto_bind=True,
+    )
+
+    assert runtime.project_id != default_project
+    assert runtime.host_workspace == project.resolve()
+
+
 def test_resolve_runtime_does_not_fallback_when_session_has_binding(tmp_path: Path):
     store = StateStore(tmp_path / "state.db")
     default_project = _insert_binding(store, tmp_path / "default")
@@ -101,3 +144,32 @@ def test_resolve_runtime_still_fails_without_any_alias(tmp_path: Path):
             settings=DockerRuntimeSettings(state_db_path=tmp_path / "state.db"),
             session_id="missing",
         )
+
+
+def test_resolve_runtime_auto_binds_from_host_path_when_session_unset(tmp_path: Path):
+    project = tmp_path / "project"
+    source = project / "src" / "main.cpp"
+    source.parent.mkdir(parents=True)
+    source.write_text("int main() { return 0; }\n", encoding="utf-8")
+    store = StateStore(tmp_path / "state.db")
+    containers = AutoBindContainers()
+    settings = DockerRuntimeSettings(
+        state_db_path=tmp_path / "state.db",
+        deny_roots=(Path("/etc"),),
+        docker_probe_enabled=False,
+    )
+
+    runtime = resolve_runtime(
+        store=store,
+        containers=containers,
+        settings=settings,
+        session_id="s1",
+        cwd=str(project),
+        candidate_paths=[str(source)],
+        allow_auto_bind=True,
+    )
+
+    assert runtime.host_workspace == project.resolve()
+    assert store.get_project_id_for_session("s1") == runtime.project_id
+    assert containers.created == [(runtime.container_name, str(project.resolve()))]
+    assert containers.ensure_calls

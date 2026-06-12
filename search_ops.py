@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 import shlex
 
 from .path_mapper import PathMapper
 from .runtime_resolver import DockerRuntime
 from .terminal_ops import docker_terminal
+
+
+logger = logging.getLogger(__name__)
 
 
 def search_files(path: str, query: str, runtime: DockerRuntime, mapper: PathMapper) -> dict:
@@ -32,6 +36,14 @@ def search_files(path: str, query: str, runtime: DockerRuntime, mapper: PathMapp
         "            pass\n"
         "PY\n"
         "fi"
+    )
+    logger.info(
+        "Gatekeeper docker_search_files：raw_path=%r query=%r container_path=%s command=%r container_name=%s",
+        path,
+        query,
+        container_path,
+        command,
+        runtime.container_name,
     )
     result = docker_terminal(command, runtime)
     return {"path": container_path, "query": query, **result.__dict__}
