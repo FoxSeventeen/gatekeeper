@@ -52,8 +52,7 @@ def inject_docker_context(**kwargs):
                 "[docker-runtime]\n"
                 "当前会话尚未设置 workspace。\n"
                 "请提示用户输入：/workspace set <absolute_host_path>\n"
-                "如果用户请求中明确给出了宿主机绝对路径，docker_* 工具会尝试基于该路径自动绑定 workspace，并把路径映射到 /workspace。\n"
-                "否则在 workspace 设置前，不要尝试执行 terminal 或文件操作。"
+                "在 workspace 设置前，不要尝试调用 docker_terminal 或 docker 文件工具执行 terminal、文件读写、搜索等操作。"
             )
         }
     logger.info(

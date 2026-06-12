@@ -73,7 +73,7 @@ def resolve_runtime(
         logger.info("Gatekeeper runtime 回退查询 default alias：original_session_id=%s default_project_id=%s", session_id, project_id)
     if not project_id:
         logger.info("Gatekeeper runtime 解析失败：没有找到 session alias session_id=%s", session_id)
-        raise WorkspaceNotSet("Workspace is not set. Ask the user to run /workspace set <absolute_host_path>.")
+        raise WorkspaceNotSet("Workspace is not set. Ask the user to run /workspace set <absolute_host_path> before using docker tools.")
     binding = store.get_project_binding(project_id)
     if not binding:
         logger.info("Gatekeeper runtime 解析失败：state.db 缺少 project binding project_id=%s", project_id)
@@ -188,6 +188,16 @@ def infer_host_workspace(candidate_paths: Sequence[str], context: dict | None = 
     for raw_path in candidate_paths:
         candidate = Path(str(raw_path)).expanduser()
         if not candidate.is_absolute():
+            continue
+        if not candidate.exists():
+            resolved_candidate = candidate.resolve(strict=False)
+            for root in context_roots:
+                try:
+                    resolved_candidate.relative_to(root.resolve())
+                except ValueError:
+                    continue
+                return root
+            logger.info("Gatekeeper runtime 自动绑定跳过不存在路径：candidate=%s", candidate)
             continue
         anchor = _existing_anchor(candidate)
         config_root = _nearest_config_root(anchor)

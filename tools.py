@@ -40,7 +40,7 @@ def _runtime_and_mapper(context: dict, args: dict[str, Any] | None = None):
         sorted(context.keys()),
         candidate_paths,
     )
-    runtime = resolve_runtime(candidate_paths=candidate_paths, allow_auto_bind=True, **context)
+    runtime = resolve_runtime(candidate_paths=candidate_paths, allow_auto_bind=False, **context)
     logger.info(
         "Gatekeeper 工具运行时解析完成：session_id=%s project_id=%s container_name=%s host_workspace=%s container_workspace=%s",
         runtime.session_id,
@@ -59,7 +59,7 @@ def docker_terminal_handler(args: dict[str, Any], **kwargs) -> str:
     def run() -> dict:
         command = str(args.get("command", ""))
         candidate_paths = extract_host_path_hints(command)
-        runtime = resolve_runtime(candidate_paths=candidate_paths, allow_auto_bind=True, **kwargs)
+        runtime = resolve_runtime(candidate_paths=candidate_paths, allow_auto_bind=False, **kwargs)
         mapper = PathMapper(runtime.host_workspace, runtime.container_workspace)
         mapped_command = _rewrite_host_paths(command, mapper, candidate_paths)
         logger.info(

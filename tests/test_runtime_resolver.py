@@ -6,7 +6,7 @@ import pytest
 from gatekeeper.config import DockerRuntimeSettings
 from gatekeeper.errors import WorkspaceNotSet
 from gatekeeper.project_config import create_project_config, write_project_config
-from gatekeeper.runtime_resolver import resolve_runtime
+from gatekeeper.runtime_resolver import infer_host_workspace, resolve_runtime
 from gatekeeper.state_store import ProjectBinding, StateStore
 
 
@@ -220,3 +220,11 @@ def test_resolve_runtime_auto_binds_from_host_path_when_session_unset(tmp_path: 
     assert store.get_project_id_for_session("s1") == runtime.project_id
     assert containers.created == [(runtime.container_name, str(project.resolve()))]
     assert containers.ensure_calls
+
+
+def test_infer_host_workspace_does_not_collapse_missing_path_to_existing_parent(tmp_path: Path):
+    requested_workspace = tmp_path / "project-test"
+
+    workspace = infer_host_workspace([str(requested_workspace)])
+
+    assert workspace is None
